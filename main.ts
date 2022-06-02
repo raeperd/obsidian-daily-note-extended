@@ -1,5 +1,6 @@
 import {App, Editor, MarkdownView, Plugin, PluginSettingTab, Setting} from 'obsidian';
 import {MarkdownLinkGenerator} from "./src/MarkdownLinkGenerator";
+import {EmbedMarkdownLinksModal} from "./src/EmbedMarkdownLinksModal";
 
 interface DailyNoteExtendedSettings {
 	mySetting: string;
@@ -18,8 +19,8 @@ export default class DailyNoteExtendedPlugin extends Plugin {
 		this.markdownLinkGenerator = new MarkdownLinkGenerator(this.app.fileManager)
 
 		this.addCommand({
-			id: 'embed-markdown-files-edited-today',
-			name: 'Embed Markdown Files Edited Today',
+			id: 'embed-markdown-links-edited-today',
+			name: 'Embed Markdown Links Edited Today',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const midnight = new Date();
 				midnight.setHours(0, 0, 0, 0)
@@ -28,6 +29,22 @@ export default class DailyNoteExtendedPlugin extends Plugin {
 				editor.replaceRange(links, editor.getCursor())
 			}
 		});
+
+		this.addCommand({
+			id: 'embed-markdown-links-by-edited-date',
+			name: 'Embed Markdown Links By Edited Date',
+			editorCallback: (editor: Editor, view: MarkdownView) => {
+				const handleSubmit = (date: Date) => {
+					const nextDate = new Date(date)
+					nextDate.setDate(date.getDate() + 1)
+					const links = this.markdownLinkGenerator.getAllMarkdownLinkByCtime(view.file, date, nextDate)
+						.join("\n")
+					editor.replaceRange(links, editor.getCursor())
+				}
+
+				new EmbedMarkdownLinksModal(this.app, new Date(), handleSubmit).open()
+			}
+		})
 
 		this.addSettingTab(new DailyNoteExtendedSettingsTab(this.app, this));
 	}
